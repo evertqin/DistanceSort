@@ -7,4 +7,3 @@ public/build
 grunt*
 babel*
 npm-debug.log
-public/dest
