@@ -15,6 +15,7 @@ var nyc = {
 };
 
 
+
 function getRandomColor() {
     var letters = '01234567890ABCEDF'.split('');
     var color = '#';
@@ -116,6 +117,9 @@ class MapDisplay extends React.Component {
         });
         this.directionsDisplay = [];
         nextProps.routes.forEach((route, i) => {
+            if (!route) {
+                return;
+            }
             var rendererOptions = {
                 preserveViewport: true,
                 suppressMarkers: true,
@@ -222,10 +226,10 @@ class ResultList extends React.Component {
         dir.calcAll((ret) => {
             var result = [];
             ret.forEach(u => {
+                if (!u) return;
                 result.push(u.routes[0].legs[0])
             });
             result.sort((a, b) => {
-
                 return a.duration.value - b.duration.value;
             });
             this.setState({
@@ -264,7 +268,7 @@ class ResultList extends React.Component {
                  {list}
                  </tbody>
                 </table>
-                );
+            );
         }
 
     }

@@ -19226,6 +19226,9 @@ var MapDisplay = function (_React$Component2) {
             });
             this.directionsDisplay = [];
             nextProps.routes.forEach(function (route, i) {
+                if (!route) {
+                    return;
+                }
                 var rendererOptions = {
                     preserveViewport: true,
                     suppressMarkers: true,
@@ -19377,10 +19380,10 @@ var ResultList = function (_React$Component4) {
             dir.calcAll(function (ret) {
                 var result = [];
                 ret.forEach(function (u) {
+                    if (!u) return;
                     result.push(u.routes[0].legs[0]);
                 });
                 result.sort(function (a, b) {
-
                     return a.duration.value - b.duration.value;
                 });
                 _this6.setState({
@@ -19501,6 +19504,8 @@ var Direction = function () {
 				if (status == google.maps.DirectionsStatus.OK) {
 					//var point = response.routes[0].legs[0];
 					callback(response);
+				} else {
+					callback(null);
 				}
 			});
 		}

@@ -1,7 +1,6 @@
 	/*jslint node: true, esnext:true */
 
 	'use strict';
-
 	class Direction {
 
 		constructor(directionsService, origin, dests) {
@@ -24,6 +23,8 @@
 				if (status == google.maps.DirectionsStatus.OK) {
 					//var point = response.routes[0].legs[0];
 					callback(response);
+				} else {
+					callback(null);
 				}
 			});
 		}
