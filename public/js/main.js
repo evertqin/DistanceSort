@@ -1,5 +1,4 @@
 
-var Direction = require('./directions');
 var Hub = require('./component.jsx');
 var React = require('react');
 var ReactDOM = require('react-dom');
