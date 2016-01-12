@@ -1,0 +1,8 @@
+editor/__pycache__/
+.idea
+node_modules
+smallImage
+.sass-cache/
+public/build
+grunt*
+babel*
