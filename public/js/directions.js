@@ -4,24 +4,26 @@
 
 	class Direction {
 
-		constructor(origin, dests) {
+		constructor(directionsService, origin, dests) {
+			this.directionsService = directionsService;
 			this.origin = origin;
 			this.dests = dests;
 		}
 
 		calcDistance(origin, dest, callback) {
 			// Set destination, origin and travel mode.
+
 			var request = {
 				destination: dest,
 				origin: origin,
 				travelMode: google.maps.TravelMode.DRIVING
 			};
 
-			var directionsService = new google.maps.DirectionsService();
-			directionsService.route(request, function(response, status) {
+			//var directionsService = new google.maps.DirectionsService();
+			this.directionsService.route(request, function(response, status) {
 				if (status == google.maps.DirectionsStatus.OK) {
-					var point = response.routes[0].legs[0];
-					callback(point);
+					//var point = response.routes[0].legs[0];
+					callback(response);
 				}
 			});
 		}

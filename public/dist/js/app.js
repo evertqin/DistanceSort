@@ -19104,162 +19104,256 @@ var React = require('react');
 var Direction = require('./directions');
 
 var defaultAddresses = ["787 E 3rd Ave, Columbus, OH 43201, USA", "2399 S Morgan St, Chicago, IL 60608, USA", "1 New York Place, New York, NY 10007, USA", "1 Barker Ave, White Plains, NY 10601, USA"];
+var defaultAddressesText = defaultAddresses.join('\n');
 
 var Hub = function (_React$Component) {
-	_inherits(Hub, _React$Component);
+    _inherits(Hub, _React$Component);
 
-	function Hub(props) {
-		_classCallCheck(this, Hub);
+    function Hub(props) {
+        _classCallCheck(this, Hub);
 
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Hub).call(this, props));
+        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Hub).call(this, props));
 
-		_this.state = {
-			addresses: defaultAddresses
-		};
-		_this._onSubmit = _this._onSubmit.bind(_this);
-		return _this;
-	}
+        _this.state = {
+            addresses: defaultAddresses,
+            routes: []
+        };
+        _this._onSubmit = _this._onSubmit.bind(_this);
+        _this._onGetResponse = _this._onGetResponse.bind(_this);
+        return _this;
+    }
 
-	_createClass(Hub, [{
-		key: '_onSubmit',
-		value: function _onSubmit(addresses) {
-			this.setState({
-				addresses: addresses
-			});
-		}
-	}, {
-		key: 'render',
-		value: function render() {
-			return React.createElement(
-				'div',
-				null,
-				React.createElement(TextBoxControl, { onSubmit: this._onSubmit }),
-				React.createElement(ResultList, { addresses: this.state.addresses })
-			);
-		}
-	}]);
+    _createClass(Hub, [{
+        key: '_onSubmit',
+        value: function _onSubmit(addresses) {
+            this.setState({
+                addresses: addresses
+            });
+        }
+    }, {
+        key: '_onGetResponse',
+        value: function _onGetResponse(response) {
+            this.setState({
+                routes: response
+            });
+        }
+    }, {
+        key: '_onGetDirectionsService',
+        value: function _onGetDirectionsService(service) {
+            this.setState({ directionsService: service });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                'div',
+                null,
+                React.createElement(MapDisplay, { routes: this.state.routes }),
+                React.createElement(TextBoxControl, { onSubmit: this._onSubmit }),
+                React.createElement(ResultList, { addresses: this.state.addresses,
+                    onGetResponse: this._onGetResponse })
+            );
+        }
+    }]);
 
-	return Hub;
+    return Hub;
 }(React.Component);
 
-var TextBoxControl = function (_React$Component2) {
-	_inherits(TextBoxControl, _React$Component2);
+var MapDisplay = function (_React$Component2) {
+    _inherits(MapDisplay, _React$Component2);
 
-	function TextBoxControl(props) {
-		_classCallCheck(this, TextBoxControl);
+    function MapDisplay(props) {
+        _classCallCheck(this, MapDisplay);
 
-		var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(TextBoxControl).call(this, props));
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(MapDisplay).call(this, props));
+    }
 
-		_this2.handleSubmit = _this2.handleSubmit.bind(_this2);
-		_this2.handleTextAreaChange = _this2.handleTextAreaChange.bind(_this2);
-		_this2.state = {
-			addresses: props.dests
-		};
-		return _this2;
-	}
+    _createClass(MapDisplay, [{
+        key: 'componentDidMount',
+        value: function componentDidMount() {
+            var map;
 
-	_createClass(TextBoxControl, [{
-		key: 'handleTextAreaChange',
-		value: function handleTextAreaChange(e) {
-			this.setState({
-				addresses: e.target.value
-			});
-		}
-	}, {
-		key: 'handleSubmit',
-		value: function handleSubmit(e) {
-			e.preventDefault();
-			// assume addresses are multi-lines
-			this.props.onSubmit(this.state.addresses);
-		}
-	}, {
-		key: 'render',
-		value: function render() {
-			var list = this.props.dests.join('\n');
-			return React.createElement(
-				'form',
-				{ className: 'addressForm', onSubmit: this.handleSubmit },
-				React.createElement('textarea', { name: 'addressList', defaultValue: list, cols: '60', rows: '10', onChange: this.handleTextAreaChange }),
-				React.createElement('input', { type: 'submit', value: 'Submit' })
-			);
-		}
-	}]);
+            window.initMap = function () {
+                var indianapolis = {
+                    lat: 39.79,
+                    lng: -86.14
+                };
 
-	return TextBoxControl;
+                var map = new google.maps.Map(document.getElementById('map'), {
+                    center: indianapolis,
+                    scrollwheel: false,
+                    zoom: 7
+                });
+
+                var directionsDisplay = new google.maps.DirectionsRenderer({
+                    map: map
+                });
+
+                var directionsService = new google.maps.DirectionsService();
+                this.setState({ map: map });
+            }.bind(this);
+        }
+    }, {
+        key: 'componentWillReceiveProps',
+        value: function componentWillReceiveProps(nextProps) {
+            var _this3 = this;
+
+            var colors = ['red', 'black', 'blue', 'cyan'];
+            nextProps.routes.forEach(function (route, i) {
+                var rendererOptions = {
+                    preserveViewport: true,
+                    suppressMarkers: true,
+                    routeIndex: i,
+                    polylineOptions: { strokeColor: colors[i], strokeOpacity: 0.7 }
+                };
+                var directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
+                directionsDisplay.setMap(_this3.state.map);
+                directionsDisplay.setDirections(route);
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                'div',
+                null,
+                ' '
+            );
+        }
+    }]);
+
+    return MapDisplay;
+}(React.Component);
+
+var TextBoxControl = function (_React$Component3) {
+    _inherits(TextBoxControl, _React$Component3);
+
+    function TextBoxControl(props) {
+        _classCallCheck(this, TextBoxControl);
+
+        var _this4 = _possibleConstructorReturn(this, Object.getPrototypeOf(TextBoxControl).call(this, props));
+
+        _this4.handleSubmit = _this4.handleSubmit.bind(_this4);
+        _this4.handleTextAreaChange = _this4.handleTextAreaChange.bind(_this4);
+        _this4.state = {
+            addresses: props.dests
+        };
+        return _this4;
+    }
+
+    _createClass(TextBoxControl, [{
+        key: 'handleTextAreaChange',
+        value: function handleTextAreaChange(e) {
+            this.setState({
+                addresses: e.target.value
+            });
+        }
+    }, {
+        key: 'handleSubmit',
+        value: function handleSubmit(e) {
+            e.preventDefault();
+            // assume addresses are multi-lines
+            this.props.onSubmit(this.state.addresses.split('\n'));
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            return React.createElement(
+                'form',
+                { className: 'addressForm', onSubmit: this.handleSubmit },
+                React.createElement('textarea', { name: 'addressList', defaultValue: this.props.dests,
+                    cols: '60',
+                    rows: '10',
+                    onChange: this.handleTextAreaChange }),
+                React.createElement('input', { type: 'submit', value: 'Submit' })
+            );
+        }
+    }]);
+
+    return TextBoxControl;
 }(React.Component);
 
 TextBoxControl.defaultProps = {
-	dests: defaultAddresses
+    dests: defaultAddressesText
 };
 
-var ResultList = function (_React$Component3) {
-	_inherits(ResultList, _React$Component3);
+var ResultList = function (_React$Component4) {
+    _inherits(ResultList, _React$Component4);
 
-	function ResultList(props) {
-		_classCallCheck(this, ResultList);
+    function ResultList(props) {
+        _classCallCheck(this, ResultList);
 
-		var _this3 = _possibleConstructorReturn(this, Object.getPrototypeOf(ResultList).call(this, props));
+        var _this5 = _possibleConstructorReturn(this, Object.getPrototypeOf(ResultList).call(this, props));
 
-		_this3.state = {
-			data: [],
-			status: 'idle'
-		};
-		return _this3;
-	}
+        _this5.state = {
+            data: [],
+            status: 'idle'
+        };
+        return _this5;
+    }
 
-	_createClass(ResultList, [{
-		key: 'componentWillReceiveProps',
-		value: function componentWillReceiveProps() {
-			var _this4 = this;
+    _createClass(ResultList, [{
+        key: 'componentWillReceiveProps',
+        value: function componentWillReceiveProps(nextProps) {
+            var _this6 = this;
 
-			this.setState({
-				status: 'running'
-			});
-			var dir = new Direction("indianapolis", this.props.addresses);
-			console.log(dir);
-			dir.calcAll(function (ret) {
-				ret.sort(function (a, b) {
-					return a.duration.value - b.duration.value;
-				});
-				console.log(ret);
-				_this4.setState({
-					data: ret,
-					status: 'done'
-				});
-			});
-		}
-	}, {
-		key: 'render',
-		value: function render() {
-			var list = this.state.data.map(function (entry) {
-				return React.createElement(
-					'li',
-					{ key: entry.end_address },
-					entry.end_address + "=>" + entry.duration.text
-				);
-			});
+            if (nextProps.addresses === this.props.addresses) {
+                return;
+            }
+            this.setState({
+                status: 'running'
+            });
+            var directionsService = new google.maps.DirectionsService();
+            var dir = new Direction(directionsService, "indianapolis", nextProps.addresses);
+            dir.calcAll(function (ret) {
+                var result = [];
+                ret.forEach(function (u) {
+                    result.push(u.routes[0].legs[0]);
+                });
+                result.sort(function (a, b) {
 
-			if (this.state.status === 'running') {
-				return React.createElement(
-					'div',
-					null,
-					'Running...'
-				);
-			} else {
-				return React.createElement(
-					'ol',
-					null,
-					list
-				);
-			}
-		}
-	}]);
+                    return a.duration.value - b.duration.value;
+                });
+                console.log(result);
+                _this6.setState({
+                    data: result,
+                    status: 'done'
+                });
+                _this6.props.onGetResponse(ret);
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render() {
+            var list = this.state.data.map(function (entry) {
+                return React.createElement(
+                    'li',
+                    { key: entry.end_address },
+                    entry.end_address + "=>" + entry.duration.text
+                );
+            });
 
-	return ResultList;
+            if (this.state.status === 'running') {
+                return React.createElement(
+                    'div',
+                    null,
+                    'Running... '
+                );
+            } else {
+                return React.createElement(
+                    'ol',
+                    null,
+                    list
+                );
+            }
+        }
+    }]);
+
+    return ResultList;
 }(React.Component);
 
 ResultList.defaultProps = {
-	addresses: defaultAddresses
+    addresses: defaultAddresses
 };
 module.exports = Hub;
 
@@ -19273,9 +19367,10 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Direction = function () {
-	function Direction(origin, dests) {
+	function Direction(directionsService, origin, dests) {
 		_classCallCheck(this, Direction);
 
+		this.directionsService = directionsService;
 		this.origin = origin;
 		this.dests = dests;
 	}
@@ -19284,17 +19379,18 @@ var Direction = function () {
 		key: 'calcDistance',
 		value: function calcDistance(origin, dest, callback) {
 			// Set destination, origin and travel mode.
+
 			var request = {
 				destination: dest,
 				origin: origin,
 				travelMode: google.maps.TravelMode.DRIVING
 			};
 
-			var directionsService = new google.maps.DirectionsService();
-			directionsService.route(request, function (response, status) {
+			//var directionsService = new google.maps.DirectionsService();
+			this.directionsService.route(request, function (response, status) {
 				if (status == google.maps.DirectionsStatus.OK) {
-					var point = response.routes[0].legs[0];
-					callback(point);
+					//var point = response.routes[0].legs[0];
+					callback(response);
 				}
 			});
 		}
@@ -19333,71 +19429,15 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 
 window.addEventListener('load', function () {
-  var apiUrl = "https://maps.googleapis.com/maps/api/js?key=AIzaSyBYO4IXfAT4Ni3H4XOREgBhkeZJ4JhtZF8&callback=initMap";
-  var scriptTag = document.createElement('script');
-  scriptTag.setAttribute('async', "");
-  scriptTag.setAttribute('defer', "");
-  scriptTag.src = apiUrl;
-  document.body.appendChild(scriptTag);
+	var apiUrl = "https://maps.googleapis.com/maps/api/js?key=AIzaSyBYO4IXfAT4Ni3H4XOREgBhkeZJ4JhtZF8&callback=initMap";
+	var scriptTag = document.createElement('script');
+	scriptTag.setAttribute('async', "");
+	scriptTag.setAttribute('defer', "");
+	scriptTag.src = apiUrl;
+	document.body.appendChild(scriptTag);
 });
 
-var map;
-
-window.initMap = function () {
-  var chicago = { lat: 41.85, lng: -87.65 };
-  var indianapolis = { lat: 39.79, lng: -86.14 };
-
-  var columbus = { lat: 39.9833, lng: -82.9833 };
-  var nyc = { lat: 40.7127, lng: -74.0059 };
-
-  var map = new google.maps.Map(document.getElementById('map'), {
-    center: chicago,
-    scrollwheel: false,
-    zoom: 7
-  });
-
-  var directionsDisplay = new google.maps.DirectionsRenderer({
-    map: map
-  });
-
-  // // Set destination, origin and travel mode.
-  // var request = {
-  //   destination: indianapolis,
-  //   origin: chicago,
-  //   travelMode: google.maps.TravelMode.DRIVING
-  // };
-
-  // // Pass the directions request to the directions service.
-  // var directionsService = new google.maps.DirectionsService();
-  // directionsService.route(request, function(response, status) {
-  //   if (status == google.maps.DirectionsStatus.OK) {
-  //     var point = response.routes[ 0 ].legs[ 0 ];
-  //     // Display the route on the map.
-  //     console.log(point);
-  //     directionsDisplay.setDirections(response);
-  //   }
-  // });
-
-  // var dests = [chicago, columbus, nyc];
-  // var dir = new Direction(indianapolis, dests);
-  // dir.calcAll((ret) => {
-  //   var div = document.createElement('div');
-  //   console.log(div);
-  //   var ol = div.appendChild(document.createElement('ol'));
-  //   ret.sort((a, b)=> {
-  //     return a.duration.value - b.duration.value;
-  //   });
-
-  //   for(var i = 0; i < ret.length; ++i){
-  //     var li = ol.appendChild(document.createElement('li'));
-  //     li.textContent = ret[i].end_address + '->' + ret[i].duration.text;
-  //   }
-  //   document.body.appendChild(div);
-
-  // });
-
-  ReactDOM.render(React.createElement(Hub, null), document.getElementById('result'));
-};
+ReactDOM.render(React.createElement(Hub, null), document.getElementById('result'));
 
 module.exports = map;
 
