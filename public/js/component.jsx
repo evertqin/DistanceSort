@@ -94,6 +94,7 @@ class Hub extends React.Component {
         var obj = {};
         obj[key] = value;
         this.setState(obj);
+
     }
 
     render() {
@@ -218,12 +219,13 @@ class TextBoxControl extends React.Component {
     handleAddressChange(e) {
         function addressEntered() {
             var place = this.addrAutocomplete.getPlace();
-            console.log(place);
             if (place.geometry) {
                 var addresses = this.state.addresses.split('\n');
-                    addresses.push(this.refs.addressAC.value);
-                    this.setState({addresses: addresses.join('\n')});
-                   
+                addresses.push(this.refs.addressAC.value);
+                this.setState({
+                    addresses: addresses.join('\n')
+                });
+
             } else {
                 alertUser("Does not return a geo location");
             }
@@ -241,10 +243,6 @@ class TextBoxControl extends React.Component {
         }
     }
 
-    handleKeyPress(e) {
-        console.log(e);
-    }
-
     handleTextAreaChange(e) {
         this.setState({
             addresses: e.target.value
@@ -256,6 +254,7 @@ class TextBoxControl extends React.Component {
         // assume addresses are multi-lines
         this.props.onSubmit("addresses", this.state.addresses.split('\n'));
         this.props.onSubmit("origin", this.state.origin);
+        console.log(this.state.origin);
     }
 
     render() {
@@ -271,7 +270,6 @@ class TextBoxControl extends React.Component {
                 <input className="form-control" type='text' required
                        ref="originAC" name="origin" defaultValue="nyc" 
                        onChange={this.handleOriginChange}
-                       onkeypress={this.handleKeyPress} 
                        /> 
 
             </div>
@@ -293,7 +291,6 @@ class TextBoxControl extends React.Component {
 
 
 
-
 class ResultList extends React.Component {
     constructor(props) {
         super(props);
@@ -304,18 +301,21 @@ class ResultList extends React.Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        if (nextProps.addresses === this.props.addresses) {
+        if (nextProps.addresses === this.props.addresses && nextProps.origin === this.props.origin) {
             return;
         }
         this.setState({
             status: 'running'
         });
         var directionsService = new google.maps.DirectionsService();
+
         var dir = new Direction(directionsService, nextProps.origin, nextProps.addresses);
         dir.calcAll((ret) => {
             var result = [];
             ret.forEach(u => {
-                if (!u) return;
+                if (u.status != google.maps.DirectionsStatus.OK) {
+                    return
+                };
                 result.push(u.routes[0].legs[0])
             });
             result.sort((a, b) => {

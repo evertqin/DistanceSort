@@ -19346,11 +19346,12 @@ var TextBoxControl = function (_React$Component3) {
         value: function handleAddressChange(e) {
             function addressEntered() {
                 var place = this.addrAutocomplete.getPlace();
-                console.log(place);
                 if (place.geometry) {
                     var addresses = this.state.addresses.split('\n');
                     addresses.push(this.refs.addressAC.value);
-                    this.setState({ addresses: addresses.join('\n') });
+                    this.setState({
+                        addresses: addresses.join('\n')
+                    });
                 } else {
                     alertUser("Does not return a geo location");
                 }
@@ -19367,11 +19368,6 @@ var TextBoxControl = function (_React$Component3) {
             }
         }
     }, {
-        key: 'handleKeyPress',
-        value: function handleKeyPress(e) {
-            console.log(e);
-        }
-    }, {
         key: 'handleTextAreaChange',
         value: function handleTextAreaChange(e) {
             this.setState({
@@ -19385,6 +19381,7 @@ var TextBoxControl = function (_React$Component3) {
             // assume addresses are multi-lines
             this.props.onSubmit("addresses", this.state.addresses.split('\n'));
             this.props.onSubmit("origin", this.state.origin);
+            console.log(this.state.origin);
         }
     }, {
         key: 'render',
@@ -19413,8 +19410,7 @@ var TextBoxControl = function (_React$Component3) {
                     ),
                     React.createElement('input', { className: 'form-control', type: 'text', required: true,
                         ref: 'originAC', name: 'origin', defaultValue: 'nyc',
-                        onChange: this.handleOriginChange,
-                        onkeypress: this.handleKeyPress
+                        onChange: this.handleOriginChange
                     })
                 ),
                 React.createElement(
@@ -19464,18 +19460,21 @@ var ResultList = function (_React$Component4) {
         value: function componentWillReceiveProps(nextProps) {
             var _this6 = this;
 
-            if (nextProps.addresses === this.props.addresses) {
+            if (nextProps.addresses === this.props.addresses && nextProps.origin === this.props.origin) {
                 return;
             }
             this.setState({
                 status: 'running'
             });
             var directionsService = new google.maps.DirectionsService();
+
             var dir = new Direction(directionsService, nextProps.origin, nextProps.addresses);
             dir.calcAll(function (ret) {
                 var result = [];
                 ret.forEach(function (u) {
-                    if (!u) return;
+                    if (u.status != google.maps.DirectionsStatus.OK) {
+                        return;
+                    };
                     result.push(u.routes[0].legs[0]);
                 });
                 result.sort(function (a, b) {
@@ -19596,12 +19595,7 @@ var Direction = function () {
 
 			//var directionsService = new google.maps.DirectionsService();
 			this.directionsService.route(request, function (response, status) {
-				if (status == google.maps.DirectionsStatus.OK) {
-					//var point = response.routes[0].legs[0];
-					callback(response);
-				} else {
-					callback(null);
-				}
+				callback(response);
 			});
 		}
 	}, {
