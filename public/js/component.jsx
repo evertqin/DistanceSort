@@ -169,7 +169,6 @@ class TextBoxControl extends React.Component {
         this.handleTextAreaChange = this.handleTextAreaChange.bind(this);
         this.handleOriginChange = this.handleOriginChange.bind(this);
         this.handleAddressChange = this.handleAddressChange.bind(this);
-        this.handleKeyPress = this.handleKeyPress.bind(this);
         everythingIsFine = everythingIsFine.bind(this);
         alertUser = alertUser.bind(this);
         this.state = {

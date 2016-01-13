@@ -19290,7 +19290,6 @@ var TextBoxControl = function (_React$Component3) {
         _this4.handleTextAreaChange = _this4.handleTextAreaChange.bind(_this4);
         _this4.handleOriginChange = _this4.handleOriginChange.bind(_this4);
         _this4.handleAddressChange = _this4.handleAddressChange.bind(_this4);
-        _this4.handleKeyPress = _this4.handleKeyPress.bind(_this4);
         everythingIsFine = everythingIsFine.bind(_this4);
         alertUser = alertUser.bind(_this4);
         _this4.state = {
