@@ -19111,6 +19111,27 @@ var nyc = {
     lng: -74.0059
 };
 
+var map, autocomplete, places, marker;
+
+window.initMap = function () {
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: nyc,
+        scrollwheel: false,
+        zoom: 7
+    });
+
+    var directionsDisplay = new google.maps.DirectionsRenderer({
+        map: map
+    });
+
+    marker = new google.maps.Marker({
+        map: map,
+        anchorPoint: new google.maps.Point(0, -29)
+    });
+
+    // var directionsService = new google.maps.DirectionsService();
+};
+
 function getRandomColor() {
     var letters = '01234567890ABCEDF'.split('');
     var color = '#';
@@ -19136,6 +19157,18 @@ function getGeoCode(address, callback) {
     });
 }
 
+function alertUser(message) {
+    this.refs.alertType.classList.remove("alert-danger");
+    this.refs.alertType.classList.add("alert-info");
+}
+
+function everythingIsFine() {
+    if (this.refs.alertType.classList.contains("alert-danger")) {
+        this.refs.alertType.classList.remove("alert-danger");
+        this.refs.alertType.classList.add("alert-info");
+    }
+}
+
 var Hub = function (_React$Component) {
     _inherits(Hub, _React$Component);
 
@@ -19154,6 +19187,9 @@ var Hub = function (_React$Component) {
     }
 
     _createClass(Hub, [{
+        key: 'componentWillMount',
+        value: function componentWillMount() {}
+    }, {
         key: '_update',
         value: function _update(key, value) {
             var obj = {};
@@ -19191,35 +19227,15 @@ var MapDisplay = function (_React$Component2) {
 
     _createClass(MapDisplay, [{
         key: 'componentDidMount',
-        value: function componentDidMount() {
-            var map;
-
-            window.initMap = function () {
-                var map = new google.maps.Map(document.getElementById('map'), {
-                    center: this.props.origin,
-                    scrollwheel: false,
-                    zoom: 7
-                });
-
-                var directionsDisplay = new google.maps.DirectionsRenderer({
-                    map: map
-                });
-
-                var directionsService = new google.maps.DirectionsService();
-                this.setState({
-                    map: map
-                });
-            }.bind(this);
-        }
+        value: function componentDidMount() {}
     }, {
         key: 'componentWillReceiveProps',
         value: function componentWillReceiveProps(nextProps) {
             var _this3 = this;
 
             if (this.props.origin !== nextProps.origin) {
-                this.state.map.setCenter(nextProps.origin);
+                map.setCenter(nextProps.origin);
             }
-
             var colors = [];
             this.directionsDisplay.forEach(function (u) {
                 u.setMap(null);
@@ -19239,7 +19255,7 @@ var MapDisplay = function (_React$Component2) {
                     }
                 };
                 var dd = new google.maps.DirectionsRenderer(rendererOptions);
-                dd.setMap(_this3.state.map);
+                dd.setMap(map);
                 dd.setDirections(route);
                 _this3.directionsDisplay.push(dd);
             });
@@ -19273,21 +19289,87 @@ var TextBoxControl = function (_React$Component3) {
         _this4.handleSubmit = _this4.handleSubmit.bind(_this4);
         _this4.handleTextAreaChange = _this4.handleTextAreaChange.bind(_this4);
         _this4.handleOriginChange = _this4.handleOriginChange.bind(_this4);
+        _this4.handleAddressChange = _this4.handleAddressChange.bind(_this4);
+        _this4.handleKeyPress = _this4.handleKeyPress.bind(_this4);
+        everythingIsFine = everythingIsFine.bind(_this4);
+        alertUser = alertUser.bind(_this4);
         _this4.state = {
             origin: nyc,
-            addresses: props.addresses
+            addresses: defaultAddressesText
         };
+
+        _this4.addrAutocomplete = null;
+
         return _this4;
     }
 
     _createClass(TextBoxControl, [{
+        key: 'onPlaceChanged',
+        value: function onPlaceChanged() {
+            marker.setVisible(false);
+            var place = autocomplete.getPlace();
+            if (place.geometry) {
+                marker.setIcon( /** @type {google.maps.Icon} */{
+                    url: place.icon,
+                    size: new google.maps.Size(71, 71),
+                    origin: new google.maps.Point(0, 0),
+                    anchor: new google.maps.Point(17, 34),
+                    scaledSize: new google.maps.Size(35, 35)
+                });
+                marker.setPosition(place.geometry.location);
+                marker.setVisible(true);
+                map.panTo(place.geometry.location);
+                map.setZoom(15);
+            } else {
+                alertUser("Does not return a geo location");
+            }
+        }
+    }, {
         key: 'handleOriginChange',
         value: function handleOriginChange(e) {
+            everythingIsFine();
+
+            if (!autocomplete) {
+                autocomplete = new google.maps.places.Autocomplete(this.refs.originAC);
+                places = new google.maps.places.PlacesService(map);
+                autocomplete.addListener('place_changed', this.onPlaceChanged.bind(this));
+            }
+
             getGeoCode.call(this, e.target.value, function (value) {
                 this.setState({
                     origin: value
                 });
             }.bind(this));
+        }
+    }, {
+        key: 'handleAddressChange',
+        value: function handleAddressChange(e) {
+            function addressEntered() {
+                var place = this.addrAutocomplete.getPlace();
+                console.log(place);
+                if (place.geometry) {
+                    var addresses = this.state.addresses.split('\n');
+                    addresses.push(this.refs.addressAC.value);
+                    this.setState({ addresses: addresses.join('\n') });
+                } else {
+                    alertUser("Does not return a geo location");
+                }
+            }
+
+            if (this.refs.alertType.classList.contains("alert-danger")) {
+                this.refs.alertType.classList.remove("alert-danger");
+                this.refs.alertType.classList.add("alert-info");
+            }
+
+            if (!this.addrAutocomplete) {
+                this.addrAutocomplete = new google.maps.places.Autocomplete(this.refs.addressAC);
+                this.addrAutocomplete.addListener('place_changed', addressEntered.bind(this));
+            }
+        }
+    }, {
+        key: 'handleKeyPress',
+        value: function handleKeyPress(e) {
+            console.log(e);
         }
     }, {
         key: 'handleTextAreaChange',
@@ -19312,13 +19394,28 @@ var TextBoxControl = function (_React$Component3) {
                 { className: 'addressArea', onSubmit: this.handleSubmit },
                 React.createElement(
                     'div',
+                    { ref: 'alertType', className: 'alert alert-info', role: 'alert' },
+                    React.createElement('span', { className: 'glyphicon glyphicon-exclamation-sign', 'aria-hidden': 'true' }),
+                    React.createElement(
+                        'span',
+                        { ref: 'alertContent', className: 'sr-only' },
+                        'Status:'
+                    ),
+                    'Everything is fine'
+                ),
+                React.createElement(
+                    'div',
                     { className: 'form-group' },
                     React.createElement(
                         'label',
                         { htmlFor: 'originInput' },
                         'Origin'
                     ),
-                    React.createElement('input', { className: 'form-control', type: 'text', name: 'origin', defaultValue: 'nyc', onChange: this.handleOriginChange })
+                    React.createElement('input', { className: 'form-control', type: 'text', required: true,
+                        ref: 'originAC', name: 'origin', defaultValue: 'nyc',
+                        onChange: this.handleOriginChange,
+                        onkeypress: this.handleKeyPress
+                    })
                 ),
                 React.createElement(
                     'div',
@@ -19328,7 +19425,9 @@ var TextBoxControl = function (_React$Component3) {
                         { htmlFor: 'addressesInput' },
                         'Address'
                     ),
-                    React.createElement('textarea', { name: 'addressList', defaultValue: this.props.addresses,
+                    React.createElement('input', { className: 'form-control', type: 'text',
+                        ref: 'addressAC', name: 'address', defaultValue: '1 New York Place, New York, NY 10007, USA', onChange: this.handleAddressChange }),
+                    React.createElement('textarea', { name: 'addressList', value: this.state.addresses,
                         cols: '60', className: 'form-control',
                         rows: '10',
                         onChange: this.handleTextAreaChange }),
@@ -19344,10 +19443,6 @@ var TextBoxControl = function (_React$Component3) {
 
     return TextBoxControl;
 }(React.Component);
-
-TextBoxControl.defaultProps = {
-    addresses: defaultAddressesText
-};
 
 var ResultList = function (_React$Component4) {
     _inherits(ResultList, _React$Component4);
@@ -19543,7 +19638,7 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 
 window.addEventListener('load', function () {
-	var apiUrl = "https://maps.googleapis.com/maps/api/js?key=AIzaSyBYO4IXfAT4Ni3H4XOREgBhkeZJ4JhtZF8&callback=initMap";
+	var apiUrl = "https://maps.googleapis.com/maps/api/js?key=AIzaSyBYO4IXfAT4Ni3H4XOREgBhkeZJ4JhtZF8&signed_in=true&libraries=places&callback=initMap";
 	var scriptTag = document.createElement('script');
 	scriptTag.setAttribute('async', "");
 	scriptTag.setAttribute('defer', "");

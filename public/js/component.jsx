@@ -14,7 +14,27 @@ var nyc = {
     lng: -74.0059
 };
 
+var map, autocomplete, places, marker;
 
+window.initMap = function() {
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: nyc,
+        scrollwheel: false,
+        zoom: 7
+    });
+
+    var directionsDisplay = new google.maps.DirectionsRenderer({
+        map: map
+    });
+
+    marker = new google.maps.Marker({
+        map: map,
+        anchorPoint: new google.maps.Point(0, -29)
+    });
+
+    // var directionsService = new google.maps.DirectionsService();
+
+};
 
 function getRandomColor() {
     var letters = '01234567890ABCEDF'.split('');
@@ -43,6 +63,18 @@ function getGeoCode(address, callback) {
     });
 }
 
+function alertUser(message) {
+    this.refs.alertType.classList.remove("alert-danger");
+    this.refs.alertType.classList.add("alert-info");
+}
+
+function everythingIsFine() {
+    if (this.refs.alertType.classList.contains("alert-danger")) {
+        this.refs.alertType.classList.remove("alert-danger");
+        this.refs.alertType.classList.add("alert-info");
+    }
+}
+
 class Hub extends React.Component {
     constructor(props) {
         super(props);
@@ -54,6 +86,9 @@ class Hub extends React.Component {
         this._update = this._update.bind(this);
     }
 
+    componentWillMount() {
+
+    }
 
     _update(key, value) {
         var obj = {};
@@ -84,33 +119,13 @@ class MapDisplay extends React.Component {
 
 
     componentDidMount() {
-        var map;
 
-        window.initMap = function() {
-            var map = new google.maps.Map(document.getElementById('map'), {
-                center: this.props.origin,
-                scrollwheel: false,
-                zoom: 7
-            });
-
-            var directionsDisplay = new google.maps.DirectionsRenderer({
-                map: map
-            });
-
-            var directionsService = new google.maps.DirectionsService();
-            this.setState({
-                map: map
-            });
-
-        }.bind(this);
 
     }
     componentWillReceiveProps(nextProps) {
-
         if (this.props.origin !== nextProps.origin) {
-            this.state.map.setCenter(nextProps.origin);
+            map.setCenter(nextProps.origin);
         }
-
         var colors = [];
         this.directionsDisplay.forEach(u => {
             u.setMap(null);
@@ -130,7 +145,7 @@ class MapDisplay extends React.Component {
                 }
             };
             var dd = new google.maps.DirectionsRenderer(rendererOptions);
-            dd.setMap(this.state.map);
+            dd.setMap(map);
             dd.setDirections(route);
             this.directionsDisplay.push(dd);
 
@@ -144,24 +159,90 @@ class MapDisplay extends React.Component {
 MapDisplay.defaultProps = {
     origin: nyc
 };
+
+
 class TextBoxControl extends React.Component {
     constructor(props) {
         super(props);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleTextAreaChange = this.handleTextAreaChange.bind(this);
         this.handleOriginChange = this.handleOriginChange.bind(this);
+        this.handleAddressChange = this.handleAddressChange.bind(this);
+        this.handleKeyPress = this.handleKeyPress.bind(this);
+        everythingIsFine = everythingIsFine.bind(this);
+        alertUser = alertUser.bind(this);
         this.state = {
             origin: nyc,
-            addresses: props.addresses
+            addresses: defaultAddressesText
         };
+
+        this.addrAutocomplete = null;
+
+    }
+    onPlaceChanged() {
+        marker.setVisible(false);
+        var place = autocomplete.getPlace();
+        if (place.geometry) {
+            marker.setIcon( /** @type {google.maps.Icon} */ ({
+                url: place.icon,
+                size: new google.maps.Size(71, 71),
+                origin: new google.maps.Point(0, 0),
+                anchor: new google.maps.Point(17, 34),
+                scaledSize: new google.maps.Size(35, 35)
+            }));
+            marker.setPosition(place.geometry.location);
+            marker.setVisible(true);
+            map.panTo(place.geometry.location);
+            map.setZoom(15);
+        } else {
+            alertUser("Does not return a geo location");
+        }
     }
 
     handleOriginChange(e) {
+        everythingIsFine();
+
+        if (!autocomplete) {
+            autocomplete = new google.maps.places.Autocomplete(this.refs.originAC);
+            places = new google.maps.places.PlacesService(map);
+            autocomplete.addListener('place_changed', this.onPlaceChanged.bind(this));
+        }
+
         getGeoCode.call(this, e.target.value, function(value) {
             this.setState({
                 origin: value
             });
         }.bind(this));
+    }
+
+    handleAddressChange(e) {
+        function addressEntered() {
+            var place = this.addrAutocomplete.getPlace();
+            console.log(place);
+            if (place.geometry) {
+                var addresses = this.state.addresses.split('\n');
+                    addresses.push(this.refs.addressAC.value);
+                    this.setState({addresses: addresses.join('\n')});
+                   
+            } else {
+                alertUser("Does not return a geo location");
+            }
+        }
+
+        if (this.refs.alertType.classList.contains("alert-danger")) {
+            this.refs.alertType.classList.remove("alert-danger");
+            this.refs.alertType.classList.add("alert-info");
+        }
+
+        if (!this.addrAutocomplete) {
+            this.addrAutocomplete = new google.maps.places.Autocomplete(this.refs.addressAC);
+            this.addrAutocomplete.addListener('place_changed', addressEntered.bind(this));
+
+        }
+    }
+
+    handleKeyPress(e) {
+        console.log(e);
     }
 
     handleTextAreaChange(e) {
@@ -180,14 +261,25 @@ class TextBoxControl extends React.Component {
     render() {
         return (
             <form className="addressArea" onSubmit={this.handleSubmit}>
+                <div ref="alertType" className="alert alert-info" role="alert">
+                  <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                  <span ref="alertContent" className="sr-only">Status:</span>
+                     Everything is fine
+                </div>
             <div className="form-group">
-                 <label htmlFor="originInput">Origin</label>
-                <input className="form-control" type='text' name="origin" defaultValue="nyc" onChange={this.handleOriginChange}/> 
+                <label htmlFor="originInput">Origin</label>
+                <input className="form-control" type='text' required
+                       ref="originAC" name="origin" defaultValue="nyc" 
+                       onChange={this.handleOriginChange}
+                       onkeypress={this.handleKeyPress} 
+                       /> 
 
             </div>
             <div className="form-group">
                <label htmlFor="addressesInput">Address</label>
-                <textarea name="addressList" defaultValue={this.props.addresses}
+                 <input className="form-control" type='text' 
+                       ref="addressAC" name="address" defaultValue="1 New York Place, New York, NY 10007, USA" onChange={this.handleAddressChange}/> 
+                <textarea name="addressList" value={this.state.addresses}
                                   cols="60" className="form-control"
                                   rows="10"
                                   onChange={ this.handleTextAreaChange} />
@@ -199,9 +291,6 @@ class TextBoxControl extends React.Component {
     }
 }
 
-TextBoxControl.defaultProps = {
-    addresses: defaultAddressesText
-}
 
 
 
