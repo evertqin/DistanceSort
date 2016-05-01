@@ -1,5 +1,5 @@
 
-var Hub = require('./component.jsx');
+var Hub = require('./component');
 var React = require('react');
 var ReactDOM = require('react-dom');
 

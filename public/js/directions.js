@@ -3,19 +3,20 @@
 	'use strict';
 	class Direction {
 
-		constructor(directionsService, origin, dests) {
+		constructor(directionsService, origin, dests, travelMode) {
 			this.directionsService = directionsService;
 			this.origin = origin;
 			this.dests = dests;
+			this.travelMode = travelMode;
+
 		}
 
 		calcDistance(origin, dest, callback) {
 			// Set destination, origin and travel mode.
-
 			var request = {
 				destination: dest,
 				origin: origin,
-				travelMode: google.maps.TravelMode.DRIVING
+				travelMode: this.travelMode 
 			};
 
 			//var directionsService = new google.maps.DirectionsService();

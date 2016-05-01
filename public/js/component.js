@@ -3,9 +3,13 @@
 var React = require('react');
 var Direction = require('./directions');
 
-var defaultAddresses = ["787 E 3rd Ave, Columbus, OH 43201, USA",
-    "2399 S Morgan St, Chicago, IL 60608, USA",
-    "1 New York Place, New York, NY 10007, USA", "1 Barker Ave, White Plains, NY 10601, USA"
+import {TravelMethods} from './constants/enums';
+
+var defaultAddresses = [
+    "787 E 3rd Ave, Columbus, OH 43201, USA"
+    , "2399 S Morgan St, Chicago, IL 60608, USA"
+    , "1 New York Place, New York, NY 10007, USA"
+    , "1 Barker Ave, White Plains, NY 10601, USA"
 ];
 var defaultAddressesText = defaultAddresses.join('\n');
 
@@ -81,7 +85,8 @@ class Hub extends React.Component {
         this.state = {
             origin: nyc,
             addresses: defaultAddresses,
-            routes: []
+            routes: [],
+            travelMode: 'DRIVING'
         };
         this._update = this._update.bind(this);
     }
@@ -94,16 +99,16 @@ class Hub extends React.Component {
         var obj = {};
         obj[key] = value;
         this.setState(obj);
-
     }
 
     render() {
         return (
             <div>
             <MapDisplay origin = {this.state.origin} routes={ this.state.routes } />
-    		<TextBoxControl onSubmit={ this._update} />
-    		<ResultList origin = {this.state.origin} addresses={ this.state.addresses }
+    		<TextBoxControl onSubmit={this._update} />
+    		<ResultList origin = {this.state.origin} addresses={ this.state.addresses } travelMode={ this.state.travelMode}
                 onGetResponse={ this._update.bind(this, "routes") }                 />
+            }
         </div>
         );
     }
@@ -154,9 +159,12 @@ class MapDisplay extends React.Component {
 
     }
     render() {
-        return (<div> </div>);
+        return (
+            <div/>
+        );
     }
 }
+
 MapDisplay.defaultProps = {
     origin: nyc
 };
@@ -168,11 +176,13 @@ class TextBoxControl extends React.Component {
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleTextAreaChange = this.handleTextAreaChange.bind(this);
         this.handleOriginChange = this.handleOriginChange.bind(this);
+        this.handleTravelMethodChange = this.handleTravelMethodChange.bind(this);
         this.handleAddressChange = this.handleAddressChange.bind(this);
         everythingIsFine = everythingIsFine.bind(this);
         alertUser = alertUser.bind(this);
         this.state = {
             origin: nyc,
+            travelMode: 'DRIVING',
             addresses: defaultAddressesText
         };
 
@@ -215,6 +225,14 @@ class TextBoxControl extends React.Component {
         }.bind(this));
     }
 
+
+    handleTravelMethodChange(e) {
+        everythingIsFine();
+        this.setState({
+            travelMode: e.target.value
+        });
+    }
+
     handleAddressChange(e) {
         function addressEntered() {
             var place = this.addrAutocomplete.getPlace();
@@ -252,15 +270,16 @@ class TextBoxControl extends React.Component {
         e.preventDefault();
         // assume addresses are multi-lines
         this.props.onSubmit("addresses", this.state.addresses.split('\n'));
+        this.props.onSubmit("travelMode", this.state.travelMode);
         this.props.onSubmit("origin", this.state.origin);
-        console.log(this.state.origin);
     }
 
     render() {
+
         return (
             <form className="addressArea" onSubmit={this.handleSubmit}>
                 <div ref="alertType" className="alert alert-info" role="alert">
-                  <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+                  <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"/>
                   <span ref="alertContent" className="sr-only">Status:</span>
                      Everything is fine
                 </div>
@@ -271,6 +290,27 @@ class TextBoxControl extends React.Component {
                        onChange={this.handleOriginChange}
                        /> 
 
+            </div>
+            <div className="form-group travel-method">
+                 <label htmlFor="methodInput">Travel Method</label>
+                 <br/>
+                <select value={this.state.TravelMethod} onChange={this.handleTravelMethodChange}>
+                 {(() => {
+                    let items = []
+
+                    for(let key in TravelMethods) {
+                        items.push(
+                            <option key = {key} type='radio' value={key}>
+                                {key}
+                            </option>
+                            
+                            )
+                    }
+                    return items;
+                  })()}
+                 </select>
+
+                 
             </div>
             <div className="form-group">
                <label htmlFor="addressesInput">Address</label>
@@ -307,8 +347,7 @@ class ResultList extends React.Component {
             status: 'running'
         });
         var directionsService = new google.maps.DirectionsService();
-
-        var dir = new Direction(directionsService, nextProps.origin, nextProps.addresses);
+        var dir = new Direction(directionsService, nextProps.origin, nextProps.addresses, nextProps.travelMode);
         dir.calcAll((ret) => {
             var result = [];
             ret.forEach(u => {

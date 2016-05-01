@@ -9,3 +9,9 @@ html, body {
 
 .addressArea {
   width: 100%; }
+
+.travel-method .vis-hidden input {
+  display: none; }
+
+.travel-method .vis-hidden input:checked ~ label {
+  color: red; }

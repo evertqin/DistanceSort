@@ -11,9 +11,9 @@ var sass = require('gulp-sass');
 function compile(watch) {
 	var bundler = watchify(browserify('./public/js/main.js', {
 		debug: true,
-		extensions: ['.jsx', '.js'],
+		extensions: ['.js'],
 	}).transform(babel, {
-		presets: ["es2015", "react"]
+		presets: ["es2015", "react", 'stage-0']
 	}));
 
 
