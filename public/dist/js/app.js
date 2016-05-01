@@ -19273,8 +19273,7 @@ var Hub = function (_React$Component) {
                 React.createElement(MapDisplay, { origin: this.state.origin, routes: this.state.routes }),
                 React.createElement(TextBoxControl, { onSubmit: this._update }),
                 React.createElement(ResultList, { origin: this.state.origin, addresses: this.state.addresses, travelMode: this.state.travelMode,
-                    onGetResponse: this._update.bind(this, "routes") }),
-                '}'
+                    onGetResponse: this._update.bind(this, "routes") })
             );
         }
     }]);
