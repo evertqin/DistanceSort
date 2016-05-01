@@ -108,7 +108,7 @@ class Hub extends React.Component {
     		<TextBoxControl onSubmit={this._update} />
     		<ResultList origin = {this.state.origin} addresses={ this.state.addresses } travelMode={ this.state.travelMode}
                 onGetResponse={ this._update.bind(this, "routes") }                 />
-            }
+            
         </div>
         );
     }
